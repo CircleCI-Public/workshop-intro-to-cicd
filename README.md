@@ -16,3 +16,10 @@ The application is a minimal Node.JS app with two tests and a Dockerfile to buil
 - `npm run test`
 - `npm run start` 
 - Visit https://localhost:5000 in your browser.
+
+#### Setting up the Complete project on CircleCI
+
+- For the project :) 
+- Login to [CircleCI](https://app.circleci.com) 
+- configure the new project with CircleCI, keeping the config as is
+- Set up environment variables with your Docker Hub credentials: `DOCKER_LOGIN` and `DOCKER_PWD` for your username and password.
