@@ -1,0 +1,65 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@4.1.0
+  
+jobs:
+  build-and-test:
+    docker:
+      - image: circleci/node:15.4
+    
+    steps:
+      - checkout
+      - node/install-packages
+      - run:
+          command: npm run test-ci
+      - run:
+          name: Copy tests results for storing
+          command: |
+            mkdir ~/test-results
+            cp test-results.xml ~/test-results/
+          when: always
+      - store_test_results:
+          path: ~/test-results
+      - store_artifacts:
+          path: ~/test-results
+
+  vulnerability-scan:
+    docker:
+      - image: shiftleft/sast-scan
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: Perform Scan
+          command: |
+            scan --build
+      - store_artifacts:
+          path: reports
+          destination: sast-scan-reports
+
+  deploy-docker:
+    docker:
+      - image: circleci/node:15.4
+    
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - run:
+          command: |
+            export TAG=0.1.<< pipeline.number >>
+            export IMAGE_NAME=$CIRCLE_PROJECT_REPONAME
+            docker build -t $DOCKER_LOGIN/$IMAGE_NAME -t $DOCKER_LOGIN/$IMAGE_NAME:$TAG .
+            echo $DOCKER_PWD | docker login -u $DOCKER_LOGIN --password-stdin
+
+workflows:
+  node-test-and-deploy:
+    jobs:
+      - build-and-test
+      - vulnerability-scan:
+          requires: 
+            - build-and-test
+      - deploy-docker:
+          requires: 
+            - vulnerability-scan
