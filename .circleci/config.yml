@@ -57,9 +57,12 @@ workflows:
   node-test-and-deploy:
     jobs:
       - build-and-test
-      - vulnerability-scan:
+      - vulnerability-scan
+      - hold-for-approval:
+          type: approval
           requires: 
             - build-and-test
+            - vulnerability-scan
       - deploy-docker:
           requires: 
-            - vulnerability-scan
+            - hold-for-approval
